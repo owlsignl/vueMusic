@@ -1,15 +1,15 @@
 <template>
     <div class="recommend">
         <div class="recommend-content">
-            <div class="slider-wrapper">
-                <my-slider>
-                    <div v-for="item in sliderList">
-                        <a :href="item.linkUrl">
-                            <img :src="item.picUrl" alt="">
-                        </a>
-                    </div>
-                </my-slider>
-            </div>
+          <div v-if="recommends.length" class="slider-wrapper">
+            <my-slider :length="recommends">
+              <div v-for="item in recommends">
+                <a :href="item.linkUrl">
+                  <img :src="item.picUrl" alt="">
+                </a>
+              </div>
+            </my-slider>
+          </div>
         </div>
     </div>
 </template>
@@ -19,35 +19,34 @@ import {getRecommend,getDiscList} from '../../api/recommend.js'
 import {ERR_OK} from '../../api/config.js'
 import MySlider from '../../base/slide/sliderShow'
 export default {
-  created () {
-      this._getRecommend();
-      this._getList();
+  components:{
+    MySlider
   },
   data(){
       return {
-          sliderList:[],
-          musicList: []
+          recommends: [],
+          songList:[]
       }
   },
-  methods:{
-      _getRecommend() {
-        getRecommend().then((res) => {
-          if (res.code === ERR_OK) {
-            this.sliderList = res.data.slider;
+  created(){
+    this._getRecommend();
+    this._getSongList();
+  },
+  methods: {
+    _getRecommend() {
+      getRecommend().then((res) => {
+        if (res.code === ERR_OK) {
+          this.recommends = res.data.slider;
+        }
+      })
+    },
+    _getSongList(){
+      getDiscList().then((res)=>{
+          if(res.code == ERR_OK) {
+              console.log(res.data);
           }
-        })
-      },
-      _getList(){
-          getDiscList().then((res)=>{
-              if(res.code === ERR_OK) {
-                  console.log(res.data.list);
-                  this.musicList = res.data.list;
-              }
-          })
-      }
-  },
-  components: {
-      MySlider
+      })
+    }
   }
 }
 </script>
@@ -55,6 +54,7 @@ export default {
 <style lang="scss">
 @import '../../common/scss/variable';
     .recommend{
+<<<<<<< HEAD
         position: fixed;
         top: 88px;
         bottom: 0;
@@ -67,7 +67,21 @@ export default {
                 width: 100%;
                 overflow: hidden;
             }
+=======
+      position: fixed;
+      top: 88px;
+      bottom: 0;
+      width: 100%;
+      .recommend-content{
+        height: 100%;
+        overflow: hidden;
+        .slider-wrapper{
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+>>>>>>> temp
         }
+      }
     }
 </style>
 

@@ -30,7 +30,7 @@ apiRoutes.get('/getDiscList',function(req,res){
   var url = 'https://c.y.qq.com/splcloud/fcgi-bin/fcg_get_diss_by_tag.fcg';
   axios.get(url,{
     headers: {
-      referer: 'https://c.y.qq.com/',
+      referer: 'https://y.qq.com/portal/playlist.html',
       host: 'c.y.qq.com'
     },
     params: req.query
