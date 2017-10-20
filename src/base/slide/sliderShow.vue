@@ -43,11 +43,11 @@
           }
         },20)
       window.addEventListener('resize',()=>{
-          if(!this.scroll){
+          if(!this.slider){
               return
           }
           this._setSliderWidth(true);
-          this.scroll.refresh()
+          this.slider.refresh()
       })
     },
     methods: {
@@ -67,7 +67,7 @@
           this.$refs.sliderGroup.style.width = width + 'px'
       },
       _initSlider(){
-          this.scroll = new BScroll(this.$refs.slider,{
+          this.slider = new BScroll(this.$refs.slider,{
             scrollX: true,
             scrollY: false,
             momentum: false,
@@ -77,8 +77,8 @@
             snapSpeed: 400,
             click: true
           });
-          this.scroll.on('scrollEnd',()=>{
-            let pageIndex = this.scroll.getCurrentPage().pageX;
+          this.slider.on('scrollEnd',()=>{
+            let pageIndex = this.slider.getCurrentPage().pageX;
             if(this.loop){
                 pageIndex -= 1;
             }
@@ -98,7 +98,7 @@
             page += 1;
         }
         this.timer = setTimeout(()=>{
-            this.scroll.goToPage(page,0,400);
+            this.slider.goToPage(page,0,400);
         },this.interval)
       }
     }

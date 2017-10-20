@@ -1,16 +1,33 @@
 <template>
     <div class="recommend">
-        <div class="recommend-content">
-          <div v-if="recommends.length" class="slider-wrapper">
-            <my-slider :length="recommends">
-              <div v-for="item in recommends">
-                <a :href="item.linkUrl">
-                  <img :src="item.picUrl" alt="">
-                </a>
-              </div>
-            </my-slider>
+        <scroll :data="songList" class="recommend-content">
+          <div>
+            <div v-if="recommends.length" class="slider-wrapper">
+              <my-slider :length="recommends">
+                  <div v-for="item in recommends">
+                    <a :href="item.linkUrl">
+                      <img :src="item.picUrl" alt="">
+                    </a>
+                  </div>
+                </my-slider>
+            </div>
+            <div class="recommend-list">
+              <h2>热门歌单推荐</h2>
+              <ul v-if="songList.length">
+                  <li v-for="item in songList" class="item">
+                    <div class="icon">
+                      <img :src="item.imgurl" width="60" height="60">
+                    </div>
+                    <div class="text">
+                      <h3>{{item.creator.name}}</h3>
+                      <p>{{item.dissname}}</p>
+                      <p>{{item.listennum}}</p>
+                    </div>
+                  </li>
+                </ul>
+            </div>
           </div>
-        </div>
+        </scroll>
     </div>
 </template>
 
@@ -18,9 +35,11 @@
 import {getRecommend,getDiscList} from '../../api/recommend.js'
 import {ERR_OK} from '../../api/config.js'
 import MySlider from '../../base/slide/sliderShow'
+import Scroll from '../../base/scroll/scroll'
 export default {
   components:{
-    MySlider
+    MySlider,
+    Scroll
   },
   data(){
       return {
@@ -43,31 +62,19 @@ export default {
     _getSongList(){
       getDiscList().then((res)=>{
           if(res.code == ERR_OK) {
-              console.log(res.data);
+              this.songList = res.data.list;
+              console.log(this.songList);
           }
       })
-    }
+    },
   }
+
 }
 </script>
 
 <style lang="scss">
 @import '../../common/scss/variable';
     .recommend{
-<<<<<<< HEAD
-        position: fixed;
-        top: 88px;
-        bottom: 0;
-        width: 100%;
-        .recommend-content{
-            height: 100%;
-            overflow: hidden;
-            .slider-wrapper{
-                position: relative;
-                width: 100%;
-                overflow: hidden;
-            }
-=======
       position: fixed;
       top: 88px;
       bottom: 0;
@@ -79,7 +86,42 @@ export default {
           position: relative;
           width: 100%;
           overflow: hidden;
->>>>>>> temp
+        }
+        .recommend-list{
+          h2{
+            text-align: center;
+            height: 65px;
+            line-height: 65px;
+            font-size: font-size-medium;
+            color: $color-theme;
+          }
+          .item{
+            display: flex;
+            box-sizing: border-box;
+            align-items: center;
+            padding: 0 20px 20px 20px;
+          }
+          .icon{
+            flex:0 0 60px;
+            padding-right: 20px;
+            width: 60px;
+          }
+          .text{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            overflow: hidden;
+            font-size: $font-size-medium;
+            line-height: 20px;
+            h3{
+              margin-bottom: 10px;
+              color: $color-text;
+            }
+            p{
+              color: $color-text-d;
+            }
+          }
         }
       }
     }
