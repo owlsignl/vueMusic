@@ -1,12 +1,12 @@
 <template>
     <div class="recommend">
-        <scroll :data="songList" class="recommend-content">
+        <scroll ref="scroll" :data="songList" v-if="songList.length" class="recommend-content">
           <div>
             <div v-if="recommends.length" class="slider-wrapper">
               <my-slider :length="recommends">
                   <div v-for="item in recommends">
                     <a :href="item.linkUrl">
-                      <img :src="item.picUrl" alt="">
+                      <img @load="imgLoad" :src="item.picUrl" alt="">
                     </a>
                   </div>
                 </my-slider>
@@ -50,6 +50,9 @@ export default {
   created(){
     this._getRecommend();
     this._getSongList();
+    window.addEventListener('resize',()=>{
+      console.log(this.$refs.scroll.scroll);
+    })
   },
   methods: {
     _getRecommend() {
@@ -63,10 +66,15 @@ export default {
       getDiscList().then((res)=>{
           if(res.code == ERR_OK) {
               this.songList = res.data.list;
-              console.log(this.songList);
           }
       })
     },
+    imgLoad(){
+      if(!this.checkLoad){
+        this.checkLoad = true;
+        this.$refs.scroll.refresh();
+      }
+    }
   }
 
 }

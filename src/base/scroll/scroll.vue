@@ -6,7 +6,7 @@
 
 <script>
 import BScroll from 'better-scroll'
-    export default{
+    export default {
         props:{
             probeType: {
                 type: Number,
@@ -31,7 +31,10 @@ import BScroll from 'better-scroll'
                 if(!this.$refs.wrapper){
                     return 
                 }
-                this.scroll = new BScroll(this.$refs.wrapper)
+                this.scroll = new BScroll(this.$refs.wrapper, {
+                    probeType: this.probeType,
+                    click: this.ckick
+                })
             },
             disable() {
                 this.scroll && this.scroll.disable()
@@ -58,4 +61,9 @@ import BScroll from 'better-scroll'
         }    
     }
 </script>
+
+<style lang="scss">
+
+</style>
+
 
