@@ -1,7 +1,12 @@
 <template>
-    <scroll ref="scroll" class="list-view" :listenScroll="listenScroll" @scroll="scroll">
+    <scroll ref="scroll" 
+        class="list-view" 
+        :listenScroll="listenScroll"
+        :data="data" 
+        @scroll="scroll"
+        :probeType="probeType">
         <ul>
-            <li class="list-group" v-for="group in data">
+            <li ref="listGroup" class="list-group" v-for="group in data">
                 <h3 ref="title">{{group.title}}</h3>
                 <ul>
                     <li v-for="item in group.items" class="list-group-item">
@@ -11,9 +16,12 @@
                 </ul>
             </li>
         </ul>
-        <ul class="list-quick" @touchstart.stop.prevent="onTouchStart">
+        <ul class="list-quick" @touchstart.stop.prevent="onTouchStart" @touchmove.stop.prevent="onTouchMove">
           <li ref="short" v-for="(item,index) in QuickList" :class="{active:index == current}" :data-index="index">{{item}}</li>      
         </ul>
+        <div class="fixed">
+            <p class="fixed-title">{{fixedTitle}}</p>
+        </div>
     </scroll>
     
 </template>
@@ -31,11 +39,14 @@ import {getAttr} from '../../common/js/dom'
         data(){
            return {
                current:0,
-               listenScroll: true
+               scrollY: -1,
            }
         },
         created(){
-            
+            this.listenScroll = true;
+            this.listHeight = [];
+            this.probeType = 3;
+            this.touch = {}
         },
         components:{
             Scroll,
@@ -46,17 +57,81 @@ import {getAttr} from '../../common/js/dom'
                     return item.title.substr(0,1);
                 })
             },
+            fixedTitle(){
+                if(this.scrollY < 0){
+                    return ''
+                }
+                return this.data[this.current] ? this.data[this.current].title : '';
+            }
         },
         methods:{
           onTouchStart(e){
               let anchorIndex = getAttr(e.target,"index");
+              let firstTouch = e.touches[0];
+              this.touch.y1 = firstTouch.pageY;
+              this.touch.newindex = anchorIndex;
+              this._scrollTo(anchorIndex);
+          },
+          onTouchMove(e){
+              let diffY = e.touches[0].pageY - this.touch.y1;
+              let delta = diffY/18 | 0;
+              let anchorIndex = parseInt(this.touch.newindex) + delta;
+              this._scrollTo(anchorIndex); 
           },
           scroll(pos){
-              console.log(pos.y);
+              this.scrollY = pos.y;
+          },
+          _scrollTo(index){
+              if(!index && index !== 0){
+                  return 
+              }
+              if(index < 0){
+                  index = 0;
+              }else if(index > this.listHeight.length - 2){
+                  index = this.listHeight.length - 2;
+              }else{
+                  this.current = index;
+              }
+              this.scrollY = - this.listHeight[index];
+              this.$refs.scroll.scrollToElement(this.$refs.listGroup[index],0); 
+          },
+          getHeight(){
+              let height = 0;
+              this.listHeight = [];
+              let listGroup = this.$refs.listGroup;
+              const listHeight = this.listHeight;
+              listHeight.push(height);
+              for(let i=0;i < listGroup.length;i++){
+                  height += listGroup[i].clientHeight;
+                  listHeight.push(height);
+              }
+          },
+        },
+        watch:{
+            data(){
+                setTimeout(()=>{
+                    this.getHeight();
+                },20)
+            },
+            scrollY(newY){
+              if(newY > 0){
+                  this.current = 0;
+                  return 
+              }
+              for(let i=0;i<this.listHeight.length - 1;i++){
+                  let heightMix = this.listHeight[i];
+                  let heightMax = this.listHeight[i+1];
+                  if(-newY > heightMix && -newY < heightMax){
+                      this.current = i;
+                      return 
+                  }
+              }
+              if(-newY > this.listHeight[this.listHeight -1]){
+                  this.current = this.listHeight -1;
+                  return 
+              }
           }
         },
-        mounted(){  
-        }
     }
 </script>
 
@@ -105,7 +180,6 @@ import {getAttr} from '../../common/js/dom'
                     text-align: center;
                     color: $color-text-l;
                     background-color: $color-background-d;
-                }
                 li{
                     padding: 1px;
                     line-height: 1;
@@ -114,5 +188,20 @@ import {getAttr} from '../../common/js/dom'
                         color: $color-theme;
                     }
                 }
+        }
+        .fixed-title{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            p{
+                padding-left: 20px;
+                height: 30px;
+                line-height: 30px;
+                font-size: $font-size-small;
+                color: $color-text-l;
+                background: $color-highlight-background;
+            }
+        }
     }
 </style>

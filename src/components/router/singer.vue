@@ -1,5 +1,5 @@
 <template>
-    <div class="singer" v-if="singerList">
+    <div class="singer">
         <list-view :data="singerList"></list-view>
     </div>
 </template>
