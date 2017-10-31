@@ -5,7 +5,7 @@ import Recommend from '../components/router/recommend'
 import Search from '../components/router/search'
 import Singer from '../components/router/singer'
 import User from '../components/user/user'
-
+import Detail from '../components/router/singer-detail/singer-detail'
 Vue.use(Router)
 
 export default new Router({
@@ -29,7 +29,13 @@ export default new Router({
     },
     {
       path: '/singer',
-      component: Singer
+      component: Singer,
+      children:[
+          {
+            path: ':id',
+            component: Detail
+          }
+      ]
     },
     {
       path: '/user',

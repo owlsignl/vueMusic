@@ -9,7 +9,7 @@
             <li ref="listGroup" class="list-group" v-for="group in data">
                 <h3 ref="title">{{group.title}}</h3>
                 <ul>
-                    <li v-for="item in group.items" class="list-group-item">
+                    <li v-for="item in group.items" class="list-group-item" @click="select(item)">
                         <img :src="item.avatar" alt="">
                         <p>{{item.name}}</p>
                     </li>
@@ -19,7 +19,7 @@
         <ul class="list-quick" @touchstart.stop.prevent="onTouchStart" @touchmove.stop.prevent="onTouchMove">
           <li ref="short" v-for="(item,index) in QuickList" :class="{active:index == current}" :data-index="index">{{item}}</li>      
         </ul>
-        <div class="fixed">
+        <div class="fixed" v-show="fixedTitle" ref="fixedTop">
             <p class="fixed-title">{{fixedTitle}}</p>
         </div>
     </scroll>
@@ -40,6 +40,7 @@ import {getAttr} from '../../common/js/dom'
            return {
                current:0,
                scrollY: -1,
+               diff: -1
            }
         },
         created(){
@@ -58,13 +59,16 @@ import {getAttr} from '../../common/js/dom'
                 })
             },
             fixedTitle(){
-                if(this.scrollY < 0){
+                if(this.scrollY > 0){
                     return ''
                 }
                 return this.data[this.current] ? this.data[this.current].title : '';
             }
         },
         methods:{
+            select(item){
+                this.$emit("select",item)
+            },
           onTouchStart(e){
               let anchorIndex = getAttr(e.target,"index");
               let firstTouch = e.touches[0];
@@ -123,6 +127,7 @@ import {getAttr} from '../../common/js/dom'
                   let heightMax = this.listHeight[i+1];
                   if(-newY > heightMix && -newY < heightMax){
                       this.current = i;
+                      this.diff = heightMax + newY;
                       return 
                   }
               }
@@ -130,6 +135,14 @@ import {getAttr} from '../../common/js/dom'
                   this.current = this.listHeight -1;
                   return 
               }
+          },
+          diff(newV){
+              let fixedTop = (newV > 0 && newV < 30) ? newV-30 : 0;
+              if(this.fixedTop === fixedTop){
+                  return 
+              }
+              this.fixedTop = fixedTop;
+              this.$refs.fixedTop.style.transform = `translateY(${fixedTop}px)`;
           }
         },
     }
@@ -189,12 +202,12 @@ import {getAttr} from '../../common/js/dom'
                     }
                 }
         }
-        .fixed-title{
+        .fixed{
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            p{
+            .fixed-title{
                 padding-left: 20px;
                 height: 30px;
                 line-height: 30px;

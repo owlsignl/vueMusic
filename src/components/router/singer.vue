@@ -1,6 +1,7 @@
 <template>
     <div class="singer">
-        <list-view :data="singerList"></list-view>
+        <list-view @select="select" :data="singerList"></list-view>
+        <router-view></router-view>
     </div>
 </template>
 
@@ -25,6 +26,11 @@ import listView from '../../base/linkview/linkview'
             this._getSingerList();
         },
         methods:{
+            select(singer){
+                this.$router.push({
+                    path: `/singer/${singer.id}`
+                })
+            },
             _getSingerList(){
                 getSingerList().then((res)=>{
                    this.singerList = this.normalLise(res.data.list);
