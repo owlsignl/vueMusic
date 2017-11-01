@@ -30,7 +30,7 @@ function filterSinger(list){
         return '';
     }
     list.forEach((item)=>{
-        ret.push(list.name);
+        ret.push(item.name);
     })
     return ret.join('/');
 }
