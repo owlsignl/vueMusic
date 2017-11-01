@@ -1,7 +1,7 @@
 import jsonp from '../common/js/jsonp.js'
 import {commonParams,options} from './config.js'
 import axios from 'axios'
-
+//获取banner数据
 export function getRecommend() {
     const url = 'https://c.y.qq.com/musichall/fcgi-bin/fcg_yqqhomepagerecommend.fcg';
     const data = Object.assign({}, commonParams, {
@@ -12,7 +12,7 @@ export function getRecommend() {
 
     return jsonp(url,data,options);
 }
-
+//获取歌单列表
 export function getDiscList() {
     const url = '/api/getDiscList'
   
@@ -34,7 +34,7 @@ export function getDiscList() {
       return Promise.resolve(res.data)
     })
   }
-
+//获取歌手列表
   export function getSingerList(){
     const url = 'https://c.y.qq.com/v8/fcg-bin/v8.fcg';
     const data = Object.assign({}, commonParams, {
@@ -47,6 +47,22 @@ export function getDiscList() {
       loginUin: 0,
       hostUin: 0,
       needNewCode: 0
+    });
+    return jsonp(url,data,options);
+  }
+  //获取歌曲列表
+  export function getSong(mid){
+    const url = "https://c.y.qq.com/v8/fcg-bin/fcg_v8_singer_track_cp.fcg";
+    const data = Object.assign({},commonParams,{
+      loginUin: 0,
+      hostUin: 0,
+      platform: "yqq",
+      needNewCode: 0,
+      singermid: mid,
+      order: "listen",
+      begin: 0,
+      num: 100,
+      songstatus: 1
     });
     return jsonp(url,data,options);
   }

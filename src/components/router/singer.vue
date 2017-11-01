@@ -8,6 +8,7 @@
 <script>
 import {getSingerList} from '../../api/recommend'
 import listView from '../../base/linkview/linkview'
+import {mapMutations} from 'vuex'
     export default {
         components:{
             listView,
@@ -26,10 +27,14 @@ import listView from '../../base/linkview/linkview'
             this._getSingerList();
         },
         methods:{
+            ...mapMutations({
+                setSinger: "SET_SINGER"
+            }),
             select(singer){
                 this.$router.push({
                     path: `/singer/${singer.id}`
-                })
+                });
+                this.setSinger(singer);
             },
             _getSingerList(){
                 getSingerList().then((res)=>{
