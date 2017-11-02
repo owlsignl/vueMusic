@@ -5,7 +5,7 @@
         </div>
         <h1 v-html="title"></h1>
         <div class="bg-img" :style="style" ref="bgimg">
-            <div class="player">
+            <div class="player" ref="play">
                 <div class="play">
                     <i class="icon-play"></i>
                     <span class="text">随机播放全部</span>
@@ -13,10 +13,11 @@
             </div>
             <div class="filter"></div>
         </div>
+        <div class="shell" ref="shell"></div>
         <scroll ref="scroll" :data="song" class="list" :probeType="probeType"
-        :listen-scroll="listenScroll">
+        :listen-scroll="listenScroll" @scroll="scroll">
             <div class="song-list-w">
-                <song-list :songs="song"></song-list>
+                <song-list :songs="song" @select="select"></song-list>
             </div>
         </scroll>
     </div>
@@ -25,6 +26,10 @@
 <script>
 import Scroll from 'base/scroll/scroll'
 import SongList from 'base/song-list/song-list'
+import {prefixStyle} from 'common/js/dom'
+import {mapActions} from 'vuex'
+const transform = prefixStyle('transform');
+const SET_HEIGHT = 40;
     export default {
         props: {
             song: {
@@ -46,9 +51,12 @@ import SongList from 'base/song-list/song-list'
         },
         data(){
             return {
-                listenScroll: true,
-                probeType: 3
+                ScrollY: 0
             }
+        },
+        created(){
+            this.listenScroll = true;
+            this.probeType = 3;
         },
         computed:{
             style(){
@@ -56,11 +64,51 @@ import SongList from 'base/song-list/song-list'
             }
         },
         mounted(){
-            this.$refs.scroll.$el.style.top = this.$refs.bgimg.clientHeight + 'px';
+            this.bg = this.$refs.bgimg;
+            this.imgHeight = this.bg.clientHeight;
+            this.$refs.scroll.$el.style.top = this.imgHeight + 'px';
         },
         methods:{
             back(){
                 this.$router.push('/singer');
+            },
+            scroll(pos){
+                this.ScrollY = pos.y;
+            },
+            select(item,index) {
+                this.selectPlay({
+                    list: this.song,
+                    index: index
+                })
+            },
+            ...mapActions([
+                'selectPlay'
+            ])
+        },
+        watch:{
+            ScrollY(newY){
+                let minHeight = -this.imgHeight + 40;
+                let translateY = Math.max(minHeight,newY);
+                let zIndex = 0;
+                let scale = 1;
+                let prent = Math.abs(newY / minHeight);
+                if(newY > 0){
+                    scale += prent; 
+                    zIndex = 10;
+                }
+                if(newY < minHeight){
+                    zIndex = 10;
+                    this.bg.style.paddingTop = 0;
+                    this.bg.style.height = `${SET_HEIGHT}px`;
+                    this.$refs.play.style.display = 'none';
+                }else{
+                    this.bg.style.paddingTop = '70%';
+                    this.bg.style.height = 0;
+                    this.$refs.play.style.display = 'block';
+                }
+                this.bg.style.zIndex = zIndex;
+                this.bg.style[transform] = `scale(${scale})`;
+                this.$refs.shell.style[transform] = `translateY(${translateY}px)`;
             }
         }
     }
@@ -112,7 +160,7 @@ import SongList from 'base/song-list/song-list'
                 position: absolute;
                 bottom: 20px;
                 width: 100%;
-                z-index: 50;
+                z-index: 5;
                 .play{
                     box-sizing: border-box;
                     width: 135px;
@@ -145,11 +193,15 @@ import SongList from 'base/song-list/song-list'
                 background: rgba(7, 17, 27, 0.4);
             }
         }
+        .shell{
+            position: relative;
+            height: 100%;
+            background-color: $color-background;
+        }
         .list{
             position: fixed;
             top: 0;
             bottom: 0;
-            overflow:hidden;
             width: 100%;
             background: $color-background;
             .song-list-w{
