@@ -82,7 +82,8 @@ const SET_HEIGHT = 40;
                 })
             },
             ...mapActions([
-                'selectPlay'
+                'selectPlay',
+                'setPlaying'
             ])
         },
         watch:{

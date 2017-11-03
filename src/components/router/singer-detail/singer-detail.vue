@@ -35,6 +35,10 @@ import Music from '../music/music'
         },
         methods:{
             _getSongList(){
+                if(!this.singer.id){
+                    this.$router.push('/singer');
+                    return 
+                }
                 getSong(this.singer.id).then((res)=>{
                     if(res.code === ERR_OK){
                         this.songList = this.normalize(res.data.list);
