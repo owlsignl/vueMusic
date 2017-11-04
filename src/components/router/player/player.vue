@@ -29,20 +29,23 @@
                         <span class="dot"></span>
                         <span class="dot"></span>
                     </div>
-                    <div class="process">
+                    <div class="progress-box">
+                        <span class="time time-l">{{format(currentTime)}}</span>
+                        <progress-bar :percentage="percentage"></progress-bar>
+                        <span class="time time-r">{{format(currentSong.duration)}}</span>
                     </div>
                     <div class="operator">
                         <div class="icon mode">
                             <i class="icon-sequence"></i>
                         </div>
                         <div class="icon previous">
-                            <i class="icon-prev"></i>
+                            <i @click="prev" class="icon-prev" :class="disable"></i>
                         </div>
                         <div class="icon playing-status">
                             <i @click="togglePlay" :class="playIcon"></i>
                         </div>
                         <div class="icon next">
-                            <i class="icon-next"></i>
+                            <i @click="next" class="icon-next" :class="disable"></i>
                         </div>
                         <div class="icon collect">
                             <i class="icon-not-favorite"></i>
@@ -68,20 +71,31 @@
                 </div>
             </div>
         </transition>
-        <audio :src="currentSong.url" ref="audio"></audio>
+        <audio :src="currentSong.url" ref="audio" @canplay="readyPlay" @error="error" @timeupdate="timeupdate"></audio>
     </div>
 </template>
 
 <script>
 import {mapGetters,mapMutations} from 'vuex'
 import Velocity from 'velocity-animate'
+import ProgressBar from 'base/progress-bar/progress-bar'
     export default {
+        components:{
+            ProgressBar,
+        },
+        data(){
+            return {
+                able: false,
+                currentTime: '00:00',
+            }
+        },
         computed:{
             ...mapGetters([
                 'currentSong',
                 'fullScreen',
                 'playlist',
-                'playing'
+                'playing',
+                'currentIndex'
             ]),
             playIcon(){
                return this.playing ? 'icon-pause' : 'icon-play'; 
@@ -91,6 +105,12 @@ import Velocity from 'velocity-animate'
             },
             playSta(){
                 return this.playing ? 'play':'play pause';
+            },
+            disable(){
+                return this.able ? '' : 'disable'
+            },
+            percentage() {
+                return this.currentTime / this.currentSong.duration;
             }
         },
         methods:{
@@ -103,10 +123,6 @@ import Velocity from 'velocity-animate'
             open(){
                 this.setFullScreen(true);
             },
-            ...mapMutations({
-                setFullScreen: 'SET_FULLSCREEN',
-                setPlaying: 'SET_PLAYING'
-            }),
             enter(el,done){
                  let {x,y,scale} = this.getAnimate();
                  Velocity(this.$refs.cd,{
@@ -134,6 +150,60 @@ import Velocity from 'velocity-animate'
             togglePlay(){
                 this.setPlaying(!this.playing);
             },
+            next(){
+                if(!this.able){
+                    return 
+                }
+                let index = this.currentIndex + 1;
+                if(index === this.playlist.length) {
+                    index = 0;
+                }
+                if(!this.playing){
+                    this.togglePlay();
+                }
+                this.setCurrentIndex(index);
+                this.able = false;
+            },
+            prev(){
+                if(!this.able) {
+                    return 
+                }
+                let index = this.currentIndex - 1;
+                if(index === -1) {
+                    index = this.playlist.length - 1;
+                }
+                this.setCurrentIndex(index);
+                this.able = false;
+            },
+            readyPlay(){
+                this.able = true;
+            },
+            error(){
+                this.able = true;
+            },
+            timeupdate(e) {
+                this.currentTime = e.target.currentTime;
+            },
+            format(time) {
+                time = time | 0;
+                let minuter = this.math(time / 60 | 0,2); 
+                let second = this.math(time % 60 | 0,2);;
+                return `${minuter}:${second}`; 
+            },
+            math(time,n) {
+                let l = time.toString().length;
+                for(let i = 0;i < l;i++) {
+                    if(l < n) {
+                        time = '0' + time;
+                    }
+                }
+                return time;
+            },
+            ...mapMutations({
+                setFullScreen: 'SET_FULLSCREEN',
+                setPlaying: 'SET_PLAYING',
+                setCurrentIndex: 'SET_CURRENTINDEX'
+            }),
             getAnimate(){
                 let paddingTop = 80;
                 let paddingBottom = 30;
@@ -286,6 +356,29 @@ import Velocity from 'velocity-animate'
                        }
                    }
                }
+               .progress-box{
+                   display: flex;
+                   align-items: center;
+                   padding: 10px 0;
+                   margin: 0 auto;
+                   width: 80%;
+                   .time{
+                       flex: 0 0 30px;
+                       width: 30px;
+                       line-height: 30px;
+                       font-size:$font-size-small;
+                       color:$color-text;
+                   }
+                   .time-l{
+                       text-align: left;
+                   }
+                   .time-r{
+                       text-align: right;
+                   }
+                   .progress-bar{
+                       flex: 1;
+                   }
+               }
                .operator{
                    display: flex;
                    align-items: center;
@@ -296,6 +389,11 @@ import Velocity from 'velocity-animate'
                    }
                    .mode,.previous{
                        text-align: right;
+                   }
+                   .next,.previous{
+                       &.disable{
+                           color: $color-theme-d;
+                       }
                    }
                    .playing-status{
                        padding: 0 20px;
