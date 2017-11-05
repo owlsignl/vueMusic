@@ -1,15 +1,19 @@
 <template>
-    <div class="progress-bar">
+    <div ref="progressB" class="progress-bar">
         <div class="inner">
-            <div class="progress"></div>
-            <div class="btn-warper">
-                <span class="move"></span>
+            <div ref="progress" class="progress"></div>
+            <div ref="btn" class="btn-warper"
+                @touchstart="onTouchStart"
+                @touchmove="onTouchMove"
+                @touchend="onTouchEnd">
+                <span ref="move" class="move"></span>
             </div>
         </div>
     </div>
 </template>
 
 <script>
+const MoveWidth = 16;
     export default {
         props:{
             percentage: {
@@ -17,6 +21,36 @@
                 default: 0
             }
         },
+        created() {
+            this. touch = {}
+        },
+        methods: {
+            onTouchStart(e) {
+                this.touch.startx = e.touches[0].pageX;
+                this.touch.left = this.$refs.progress.clientWidth;
+                console.log(e)
+            },
+            onTouchMove(e) {
+                let diff = e.touches[0].pageX - this.touch.startx;
+                let offsetL = Math.min(this.$refs.progressB.clientWidth - MoveWidth,Math.max(0,diff + this.touch.left));
+                this.setOffset(offsetL);
+            },
+            onTouchEnd() {
+
+            },
+            setOffset(offsetL) {
+                this.$refs.progress.style.width = offsetL + 'px';
+                this.$refs.btn.style.transform = `translateX(${offsetL}px)`;
+            }
+        },
+        watch: {
+            percentage(newPer) {
+                let progressB = this.$refs.progressB.clientWidth;
+                let btnW = this.$refs.btn;
+                let w = (progressB - MoveWidth) * this.percentage;
+                this.setOffset(w);
+            }
+        }
     }
 </script>
 
