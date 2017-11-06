@@ -83,6 +83,7 @@ import Velocity from 'velocity-animate'
 import ProgressBar from 'base/progress-bar/progress-bar'
 import {mode} from 'common/js/config'
 import {shuffle} from 'common/js/util'
+import {getLyric} from 'api/recommend'
     export default {
         components:{
             ProgressBar,
@@ -286,8 +287,11 @@ import {shuffle} from 'common/js/util'
                     return 
                 }
                 this.$nextTick(()=>{
+                    getLyric(newSong.mid).then((res)=>{
+                        console.log(res);
+                    },(err)=>{})
                     this.$refs.audio.play();
-                    console.log(newSong);
+                    
                 })
             },
             playing(newState){

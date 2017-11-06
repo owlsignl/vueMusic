@@ -70,12 +70,19 @@ export function getDiscList() {
   //获取歌词
   export function getLyric(mid) {
     const url = '/api/getLyric';
-    const data = {
+    const data = Object.assign({}, commonParams,{
       songmid: mid,
+      pcachetime: new Date(),
       loginUin: 0,
       hostUin: 0,
       platform: "yqq",
+      g_tk: 67232076,
       needNewCode: 0,
-      notice: 0
-    }
+      notice: 0,
+    })
+    return axios.get(url, {
+      params: data
+    }).then((res) => {
+      return Promise.resolve(res.data)
+    })
   }
