@@ -67,3 +67,15 @@ export function getDiscList() {
     });
     return jsonp(url,data,options);
   }
+  //获取歌词
+  export function getLyric(mid) {
+    const url = '/api/getLyric';
+    const data = {
+      songmid: mid,
+      loginUin: 0,
+      hostUin: 0,
+      platform: "yqq",
+      needNewCode: 0,
+      notice: 0
+    }
+  }

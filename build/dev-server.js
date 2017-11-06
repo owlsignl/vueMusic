@@ -41,6 +41,22 @@ apiRoutes.get('/getDiscList',function(req,res){
   })
 })
 
+//获取歌词
+apiRoutes.get('/getLyric',function(req,res){
+  var url = 'https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg';
+  axios.get(url,{
+    headers: {
+      referer:'https://y.qq.com/portal/player.html',
+      host: 'c.y.qq.com'
+    },
+    params: req.query
+  }).then((response)=>{
+    res.josn(response.data);
+  }).catch((e)=>{
+    console.log(e);
+  })
+})
+
 app.use('/api',apiRoutes)
 
 const devMiddleware = require('webpack-dev-middleware')(compiler, {

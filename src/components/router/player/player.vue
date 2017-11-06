@@ -31,12 +31,12 @@
                     </div>
                     <div class="progress-box">
                         <span class="time time-l">{{format(currentTime)}}</span>
-                        <progress-bar :percentage="percentage"></progress-bar>
+                        <progress-bar :percentage="percentage" @percentageChange="percentageChange"></progress-bar>
                         <span class="time time-r">{{format(currentSong.duration)}}</span>
                     </div>
                     <div class="operator">
-                        <div class="icon mode">
-                            <i class="icon-sequence"></i>
+                        <div @click="toggleMode" class="icon mode">
+                            <i :class="iconMode"></i>
                         </div>
                         <div class="icon previous">
                             <i @click="prev" class="icon-prev" :class="disable"></i>
@@ -71,7 +71,9 @@
                 </div>
             </div>
         </transition>
-        <audio :src="currentSong.url" ref="audio" @canplay="readyPlay" @error="error" @timeupdate="timeupdate"></audio>
+        <audio :src="currentSong.url" ref="audio" @canplay="readyPlay" @error="error" 
+            @timeupdate="timeupdate"
+            @ended="end"></audio>
     </div>
 </template>
 
@@ -79,6 +81,8 @@
 import {mapGetters,mapMutations} from 'vuex'
 import Velocity from 'velocity-animate'
 import ProgressBar from 'base/progress-bar/progress-bar'
+import {mode} from 'common/js/config'
+import {shuffle} from 'common/js/util'
     export default {
         components:{
             ProgressBar,
@@ -86,7 +90,7 @@ import ProgressBar from 'base/progress-bar/progress-bar'
         data(){
             return {
                 able: false,
-                currentTime: '00:00',
+                currentTime: 0,
             }
         },
         computed:{
@@ -95,7 +99,9 @@ import ProgressBar from 'base/progress-bar/progress-bar'
                 'fullScreen',
                 'playlist',
                 'playing',
-                'currentIndex'
+                'currentIndex',
+                'mode',
+                'sequenceList'
             ]),
             playIcon(){
                return this.playing ? 'icon-pause' : 'icon-play'; 
@@ -111,6 +117,16 @@ import ProgressBar from 'base/progress-bar/progress-bar'
             },
             percentage() {
                 return this.currentTime / this.currentSong.duration;
+            },
+            //改变模式切换的样式（icon）
+            iconMode() {
+                if(this.mode === mode.sequence) {
+                    return 'icon-sequence'
+                }else if(this.mode === mode.loop) {
+                    return 'icon-loop'
+                }else{
+                    return 'icon-random'
+                }
             }
         },
         methods:{
@@ -147,9 +163,43 @@ import ProgressBar from 'base/progress-bar/progress-bar'
                      scale: `${scale}`
                  },400,done)
             },
+            //切换播放状态，提交播放的状态来改变。
             togglePlay(){
                 this.setPlaying(!this.playing);
             },
+            //切换播放模式，
+            toggleMode() {
+                let num = (this.mode + 1) % 3;
+                this.setMode(num);
+                let list = null;
+                if(this.mode === mode.random) {
+                    list = shuffle(this.sequenceList);
+                }else{
+                    list = this.sequenceList;
+                }
+                this.resetIndex(list);
+                this.setPlayList(list);
+            },
+            resetIndex(list) {
+                let index = list.findIndex((item,index)=> {
+                    return item.id === this.currentSong.id;
+                })
+                this.setCurrentIndex(index);
+            },
+            //歌曲播放完毕时，根据歌曲的播放模式，处理播放完毕怎么操作
+            end() {
+                if(this.mode === mode.loop) {
+                    this.loop();
+                }else{
+                    this.next();
+                }
+            },
+            //单曲循环
+            loop() {
+               this.$refs.audio.currentTime = 0;
+               this.$refs.audio.play();
+            },
+            //播放下首歌曲
             next(){
                 if(!this.able){
                     return 
@@ -164,6 +214,7 @@ import ProgressBar from 'base/progress-bar/progress-bar'
                 this.setCurrentIndex(index);
                 this.able = false;
             },
+            //播放上首
             prev(){
                 if(!this.able) {
                     return 
@@ -175,15 +226,19 @@ import ProgressBar from 'base/progress-bar/progress-bar'
                 this.setCurrentIndex(index);
                 this.able = false;
             },
+            //当音乐加载完成时触发，设置标志位，解决因点击过快（网络不好）的情况下发生错误的情况
             readyPlay(){
                 this.able = true;
             },
+            //因网络等原因导致出现错误，将标志位置位true，若是false则在发生错误时，无法切换歌曲。
             error(){
                 this.able = true;
             },
+            //在歌曲时间改变时触发，实时的将变化的时间显示在当前页面上
             timeupdate(e) {
                 this.currentTime = e.target.currentTime;
             },
+            //获取的时间是以秒计的，格式化时间
             format(time) {
                 time = time | 0;
                 let minuter = this.math(time / 60 | 0,2); 
@@ -199,10 +254,15 @@ import ProgressBar from 'base/progress-bar/progress-bar'
                 }
                 return time;
             },
+            percentageChange(percentage) {
+                this.$refs.audio.currentTime = this.currentSong.duration * percentage;
+            },
             ...mapMutations({
                 setFullScreen: 'SET_FULLSCREEN',
                 setPlaying: 'SET_PLAYING',
-                setCurrentIndex: 'SET_CURRENTINDEX'
+                setCurrentIndex: 'SET_CURRENTINDEX',
+                setMode: 'SET_MODE',
+                setPlayList: 'SET_PLAYLIST'
             }),
             getAnimate(){
                 let paddingTop = 80;
@@ -221,9 +281,13 @@ import ProgressBar from 'base/progress-bar/progress-bar'
             }
         },
         watch:{
-            currentSong(newSong){
+            currentSong(newSong,oldSong){
+                if(newSong.id === oldSong.id) {
+                    return 
+                }
                 this.$nextTick(()=>{
                     this.$refs.audio.play();
+                    console.log(newSong);
                 })
             },
             playing(newState){

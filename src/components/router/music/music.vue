@@ -5,7 +5,7 @@
         </div>
         <h1 v-html="title"></h1>
         <div class="bg-img" :style="style" ref="bgimg">
-            <div class="player" ref="play">
+            <div @click="playRandom" class="player" ref="play">
                 <div class="play">
                     <i class="icon-play"></i>
                     <span class="text">随机播放全部</span>
@@ -28,6 +28,7 @@ import Scroll from 'base/scroll/scroll'
 import SongList from 'base/song-list/song-list'
 import {prefixStyle} from 'common/js/dom'
 import {mapActions} from 'vuex'
+import {shuffle} from 'common/js/util'
 const transform = prefixStyle('transform');
 const SET_HEIGHT = 40;
     export default {
@@ -81,9 +82,12 @@ const SET_HEIGHT = 40;
                     index: index
                 })
             },
+            playRandom() {
+               this.randomPlay({list:this.song}) 
+            },
             ...mapActions([
                 'selectPlay',
-                'setPlaying'
+                'randomPlay'
             ])
         },
         watch:{

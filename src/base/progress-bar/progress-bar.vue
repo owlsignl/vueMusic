@@ -1,5 +1,5 @@
 <template>
-    <div ref="progressB" class="progress-bar">
+    <div ref="progressB" class="progress-bar" @click="progressClick">
         <div class="inner">
             <div ref="progress" class="progress"></div>
             <div ref="btn" class="btn-warper"
@@ -26,17 +26,32 @@ const MoveWidth = 16;
         },
         methods: {
             onTouchStart(e) {
+                this.touch.initated = true;
                 this.touch.startx = e.touches[0].pageX;
                 this.touch.left = this.$refs.progress.clientWidth;
-                console.log(e)
             },
             onTouchMove(e) {
+                if(!this.touch.initated) {
+                    return 
+                }
                 let diff = e.touches[0].pageX - this.touch.startx;
                 let offsetL = Math.min(this.$refs.progressB.clientWidth - MoveWidth,Math.max(0,diff + this.touch.left));
                 this.setOffset(offsetL);
             },
             onTouchEnd() {
-
+                this.touch.initated = false;
+                this.triggerPercent();
+            },
+            progressClick(e) {
+                let rect = this.$refs.progressB.getBoundingClientRect();
+                let offsetL = e.pageX - rect.left;
+                this.setOffset(offsetL);
+                this.triggerPercent();
+            },
+            triggerPercent() {
+                let offsetL = this.$refs.progress.clientWidth;
+                let percentage = offsetL / (this.$refs.progressB.clientWidth - MoveWidth);
+                this.$emit("percentageChange",percentage);
             },
             setOffset(offsetL) {
                 this.$refs.progress.style.width = offsetL + 'px';
@@ -45,10 +60,11 @@ const MoveWidth = 16;
         },
         watch: {
             percentage(newPer) {
-                let progressB = this.$refs.progressB.clientWidth;
-                let btnW = this.$refs.btn;
-                let w = (progressB - MoveWidth) * this.percentage;
-                this.setOffset(w);
+                if(newPer >= 0 && !this.touch.initated) {
+                    let progressB = this.$refs.progressB.clientWidth;
+                    let w = (progressB - MoveWidth) * this.percentage;
+                    this.setOffset(w);
+                }
             }
         }
     }
