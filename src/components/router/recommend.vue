@@ -32,10 +32,10 @@
 </template>
 
 <script>
-import {getRecommend,getDiscList} from '../../api/recommend.js'
-import {ERR_OK} from '../../api/config.js'
-import MySlider from '../../base/slide/sliderShow'
-import Scroll from '../../base/scroll/scroll'
+import {getRecommend,getDiscList} from 'api/recommend.js'
+import {ERR_OK} from 'api/config.js'
+import MySlider from 'base/slide/sliderShow'
+import Scroll from 'base/scroll/scroll'
 export default {
   components:{
     MySlider,

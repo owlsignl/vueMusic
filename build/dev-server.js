@@ -51,7 +51,15 @@ apiRoutes.get('/getLyric',function(req,res){
     },
     params: req.query
   }).then((response)=>{
-    res.json(response.data);
+    let ret = response.data;
+    if(typeof ret == 'string') {
+      let re = /^\w+\(({[^()]+})\)$/;
+      let matches = ret.match(re);
+      if(matches) {
+        ret = JSON.parse(matches[1]);
+      } 
+    }
+    res.json(ret);
   }).catch((e)=>{
     console.log(e);
   })

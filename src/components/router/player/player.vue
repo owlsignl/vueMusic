@@ -12,22 +12,35 @@
                     <h1 v-html="currentSong.name"></h1>
                     <h2 v-html="currentSong.singer"></h2>
                 </div>
-                <div class="middle">
-                    <div class="middle-l">
+                <div class="middle"
+                    @touchstart="touchLyricStart"
+                    @touchmove="touchLyricMove"
+                    @touchend="touchLyricEnd">
+                    <div ref="cd" class="middle-l">
                         <div class="cd-warper" ref="cd">
                             <div :class="playSta" class="cd">
                                 <img :src="currentSong.image" alt="">
                             </div>
                         </div>
                         <div class="playing-lyric-warper">
-                            <div class="playing-lyric"></div>
+                            <div class="playing-lyric">{{lyricTxt}}</div>
                         </div>
                     </div>
+                    <scroll ref="lyric" class="middle-r" :data="currentLyric && currentLyric.lines">
+                        <div class="lyric-warper">
+                            <div v-if="currentLyric">
+                                <p ref= "lyricline"
+                                :class="{'active':currentLineNum === index}" 
+                                class="text"
+                                v-for="(item,index) in currentLyric.lines">{{item.txt}}</p>
+                            </div>
+                        </div>
+                    </scroll>
                 </div>
                 <div class="bottom">
                     <div class="dot-warper">
-                        <span class="dot"></span>
-                        <span class="dot"></span>
+                        <span :class="{active: currentShow == 'cd'}" class="dot"></span>
+                        <span :class="{active: currentShow == 'lyric'}" class="dot"></span>
                     </div>
                     <div class="progress-box">
                         <span class="time time-l">{{format(currentTime)}}</span>
@@ -81,18 +94,30 @@
 import {mapGetters,mapMutations} from 'vuex'
 import Velocity from 'velocity-animate'
 import ProgressBar from 'base/progress-bar/progress-bar'
+import Scroll from 'base/scroll/scroll'
 import {mode} from 'common/js/config'
 import {shuffle} from 'common/js/util'
-import {getLyric} from 'api/recommend'
+import Lyric from 'common/js/lyric'
+import {prefixStyle} from 'common/js/dom'
+let transform = prefixStyle('transform');
+let transitionDuration = prefixStyle('transitionDuration');
     export default {
         components:{
             ProgressBar,
+            Scroll
         },
         data(){
             return {
                 able: false,
                 currentTime: 0,
+                currentLyric: null,
+                currentLineNum: 0,
+                lyricTxt: '',
+                currentShow: 'cd'
             }
+        },
+        created() {
+            this.touch = {}
         },
         computed:{
             ...mapGetters([
@@ -166,7 +191,13 @@ import {getLyric} from 'api/recommend'
             },
             //切换播放状态，提交播放的状态来改变。
             togglePlay(){
+                if(!this.able) {
+                    return 
+                }
                 this.setPlaying(!this.playing);
+                if(this.currentLyric) {
+                    this.currentLyric.togglePlay();
+                }
             },
             //切换播放模式，
             toggleMode() {
@@ -199,20 +230,27 @@ import {getLyric} from 'api/recommend'
             loop() {
                this.$refs.audio.currentTime = 0;
                this.$refs.audio.play();
+               if(this.currentLyric) {
+                   this.currentLyric.seek(0);
+               }
             },
             //播放下首歌曲
             next(){
                 if(!this.able){
                     return 
                 }
-                let index = this.currentIndex + 1;
-                if(index === this.playlist.length) {
-                    index = 0;
+                if(this.playlist.length === 1) {
+                    this.loop();
+                }else{
+                    let index = this.currentIndex + 1;
+                    if(index === this.playlist.length) {
+                        index = 0;
+                    }
+                    if(!this.playing){
+                        this.togglePlay();
+                    }
+                    this.setCurrentIndex(index);
                 }
-                if(!this.playing){
-                    this.togglePlay();
-                }
-                this.setCurrentIndex(index);
                 this.able = false;
             },
             //播放上首
@@ -220,11 +258,15 @@ import {getLyric} from 'api/recommend'
                 if(!this.able) {
                     return 
                 }
-                let index = this.currentIndex - 1;
-                if(index === -1) {
-                    index = this.playlist.length - 1;
+                if(this.playlist.length === 1) {
+                    this.loop();
+                }else{
+                    let index = this.currentIndex - 1;
+                    if(index === -1) {
+                        index = this.playlist.length - 1;
+                    }
+                    this.setCurrentIndex(index);
                 }
-                this.setCurrentIndex(index);
                 this.able = false;
             },
             //当音乐加载完成时触发，设置标志位，解决因点击过快（网络不好）的情况下发生错误的情况
@@ -255,8 +297,94 @@ import {getLyric} from 'api/recommend'
                 }
                 return time;
             },
+            //获取歌词后将歌词解析，并调用Lyric使歌词能够按照时间展示。
+            getLyric() {
+                this.currentSong.getLyric().then((lyric)=>{
+                    this.currentLyric = new Lyric(lyric, this.handleLyric)
+                    if(this.playing) {
+                        this.currentLyric.play(); //播放歌词
+                    }
+                }).catch(()=>{
+                    this.currentLyric = null
+                    this.lyricTxt = ''
+                    this.currentLineNum = 0
+                })
+            },
+            //每到一个对应的时间点，调用回调函数，{lineNum,txt}:lineNum是歌词所有行中当前的行数，txt是文本内容
+            handleLyric({lineNum, txt}) {
+                this.currentLineNum = lineNum
+                if(lineNum > 5) {
+                    let ele = this.$refs.lyricline[lineNum - 5];
+                    this.$refs.lyric.scrollToElement(ele,1000);
+                }else{
+                    this.$refs.lyric.scrollTo(0,0,20);
+                }
+                this.lyricTxt = txt;
+            },
+            //进度条改变时
             percentageChange(percentage) {
+                let time = this.currentSong.duration * percentage;
                 this.$refs.audio.currentTime = this.currentSong.duration * percentage;
+                if(!this.playing) {
+                    this.togglePlay();
+                }
+                if(this.currentLyric) {
+                    this.currentLyric.seek(time * 1000);
+                }
+            },
+            //滑动屏幕切换
+            touchLyricStart(e) {
+                this.touch.initated = true;
+                this.touch.startX = e.touches[0].pageX;
+                this.touch.startY = e.touches[0].pageY;
+            },
+            touchLyricMove(e) {
+                if(!this.touch.initated) {
+                    return 
+                }
+                this.touch.delatX = e.touches[0].pageX - this.touch.startX;
+                this.touch.delatY = e.touches[0].pageY - this.touch.startY;
+                if(Math.abs(this.touch.delatX) < Math.abs(this.touch.delatY)) {
+                    return 
+                }
+                let delat = this.touch.delatX;
+                let win = window.innerWidth;
+                let left = this.currentShow == 'cd' ? 0 : -win;
+                let translate = Math.min(0,Math.max(-win,left + delat));
+                let opacity = 1 - this.touch.percentage;
+                this.touch.percentage = Math.abs(translate / win);
+                this.$refs.lyric.$el.style[transform] = `translate(${translate}px)`;
+                this.$refs.lyric.$el.style[transitionDuration] = 0;
+            },
+            touchLyricEnd() {
+                let translate,
+                    opacity;
+                if(this.currentShow == "cd") {
+                    if(this.touch.percentage > 0.1) {
+                        translate = -window.innerWidth;
+                        opacity = 0;
+                        this.currentShow = 'lyric';
+                    }else{
+                        opacity = 1;
+                        translate = 0;
+                    }
+                }else{
+                    if(this.touch.percentage < 0.9 && this.touch.percentage > 0) {
+                        translate = 0;
+                        opacity = 1;
+                        this.currentShow = 'cd';
+                    }else{
+                        translate = -window.innerWidth;
+                        opacity = 0;
+                    }
+                }
+                let time = 300;
+                this.$refs.lyric.$el.style[transform] = `translateX(${translate}px)`;
+                this.$refs.lyric.$el.style[transitionDuration] = `${time}ms`;
+                this.$refs.cd.style.opacity = opacity;
+                this.$refs.cd.style[transitionDuration] = `${time}ms`;
+                this.touch.initated = false;
+                this.touch.percentage = 0;
             },
             ...mapMutations({
                 setFullScreen: 'SET_FULLSCREEN',
@@ -279,20 +407,24 @@ import {getLyric} from 'api/recommend'
                     y,
                     scale
                 }
-            }
+            },
         },
         watch:{
             currentSong(newSong,oldSong){
                 if(newSong.id === oldSong.id) {
                     return 
                 }
-                this.$nextTick(()=>{
-                    getLyric(newSong.mid).then((res)=>{
-                        console.log(res);
-                    },(err)=>{})
+                if(this.currentLyric) {
+                    this.currentLyric.stop();
+                    this.currentLyric = null;
+                    this.lyricTxt = '';
+                    this.currentLineNum = 0;
+                }
+                clearTimeout(this.timer)
+                this.timer = setTimeout(()=>{
                     this.$refs.audio.play();
-                    
-                })
+                    this.getLyric();
+                },1000)      
             },
             playing(newState){
                 let audio = this.$refs.audio;
@@ -397,6 +529,39 @@ import {getLyric} from 'api/recommend'
                                height: 100%;
                                width: 100%;
                                border-radius: 50%;
+                           }
+                       }
+                   }
+                   .playing-lyric-warper{
+                       margin: 30px auto 0 auto;
+                       width: 80%;
+                       overflow: hidden;
+                       text-align: center;
+                       .playing-lyric{
+                           height: 20px;
+                           line-height: 20px;
+                           font-size: $font-size-medium;
+                           color: $color-text-l;
+                       }
+                   }
+               }
+               .middle-r{
+                   display: inline-block;
+                   vertical-align: top;
+                   width: 100%;
+                   height: 100%;
+                   overflow: hidden;
+                   .lyric-warper{
+                       width: 80%;
+                       margin: 0 auto;
+                       text-align: center;
+                       overflow: hidden;
+                       .text{
+                           line-height: 32px;
+                           color: $color-text-l;
+                           font-size: $font-size-medium;
+                           &.active{
+                               color: $color-text;
                            }
                        }
                    }

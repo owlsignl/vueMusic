@@ -6,9 +6,10 @@
 </template>
 
 <script>
-import {getSingerList} from '../../api/recommend'
-import listView from '../../base/linkview/linkview'
+import {getSingerList} from 'api/recommend'
+import listView from 'base/linkview/linkview'
 import {mapMutations} from 'vuex'
+import {ERR_OK} from ''
     export default {
         components:{
             listView,
